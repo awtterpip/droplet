@@ -46,7 +46,7 @@ fn main() -> Result<()> {
         Err(e) => {
             eprintln!("\nwarning: failed to update DNS record");
             eprintln!("your service will only be accessible directly via your public IP address");
-            eprintln!("\nsource of error:\n{e}");
+            eprintln!("source of error:\n{e}");
         }
     }
 

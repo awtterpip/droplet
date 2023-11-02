@@ -1,8 +1,0 @@
-dns_code = "eWBRKL3JuN4W6KDj2vLkt94o"
-
-[service]
-exec = "/bin/sh"
-args = [
-    "-c",
-    "sleep 1; echo test; echo testerr 2>&1"
-]
