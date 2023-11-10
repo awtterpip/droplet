@@ -10,6 +10,10 @@ struct Args {
     /// Path to config file
     #[arg(default_value_t = String::from("./droplet.toml"))]
     config: String,
+
+    /// Don't update DNS
+    #[arg(long)]
+    no_dns: bool,
 }
 
 fn main() -> Result<()> {
@@ -32,24 +36,26 @@ fn main() -> Result<()> {
     ))?;
     println!("configuration loaded");
 
-    let response = util::update_dns(&config);
+    if !args.no_dns {
+        let response = util::update_dns(&config);
 
-    match response {
-        Ok(r) => {
-            for line in r.lines() {
-                println!("dns: {line}");
+        match response {
+            Ok(r) => {
+                for line in r.lines() {
+                    println!("dns: {line}");
+                }
             }
-        }
-        Err(e) => {
-            eprintln!();
-            eprintln!("warning:");
-            eprintln!("    failed to update DNS record");
-            eprintln!("    your service will only be accessible via your public IP address");
-            eprintln!("    source of error:");
-            for line in e.to_string().lines() {
-                eprintln!("        {line}");
+            Err(e) => {
+                eprintln!();
+                eprintln!("warning:");
+                eprintln!("    failed to update DNS record");
+                eprintln!("    your service will only be accessible via your public IP address");
+                eprintln!("    source of error:");
+                for line in e.to_string().lines() {
+                    eprintln!("        {line}");
+                }
+                eprintln!()
             }
-            eprintln!()
         }
     }
 
