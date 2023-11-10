@@ -108,13 +108,13 @@ pub(crate) fn get_service(config: &Table) -> Result<&Table> {
             invalid!(format!("{key}.{args_key}"), args_value_type);
         };
 
-        if args_array.iter().any(|i| i.as_str().is_none()) {
+        if args_array.iter().any(|i| !i.is_str()) {
             invalid!(format!("{key}.{args_key}"), args_value_type);
         };
     };
 
     if let Some(log_value) = table.get(log_key) {
-        if log_value.as_bool().is_none() {
+        if !log_value.is_bool() {
             invalid!(format!("{key}.{log_key}"), log_value_type);
         };
     };
