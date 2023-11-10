@@ -14,6 +14,18 @@ struct Args {
     /// Don't update DNS
     #[arg(long)]
     no_dns: bool,
+
+    /// Don't pull changes from remote
+    #[arg(long)]
+    no_pull: bool,
+
+    /// Don't push changes to remote
+    #[arg(long)]
+    no_push: bool,
+
+    /// Alias for --no-pull --no-push
+    #[arg(long)]
+    no_sync: bool,
 }
 
 fn main() -> Result<()> {
@@ -59,6 +71,11 @@ fn main() -> Result<()> {
         }
     }
 
+    if !args.no_pull && !args.no_sync {
+        util::sync_pull(&config)?;
+        println!("pulled changes from remote");
+    }
+
     let service = util::start_service(&config).context("failed starting service")?;
     println!("service started");
 
@@ -74,6 +91,11 @@ fn main() -> Result<()> {
             .map(|c| c.to_string())
             .unwrap_or("<none>".to_string())
     );
+
+    if !args.no_push && !args.no_sync {
+        util::sync_push(&config)?;
+        println!("pushed changes to remote");
+    }
 
     Ok(())
 }

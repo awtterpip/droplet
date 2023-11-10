@@ -4,7 +4,7 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
-use anyhow::{bail, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
 use toml::Table;
 
 static DEFAULT_CONFIG: &str = r#"
@@ -158,4 +158,146 @@ pub(crate) fn start_service(config: &Table) -> Result<Child> {
     let child = cmd.args(args).spawn()?;
 
     Ok(child)
+}
+
+pub(crate) fn get_sync(config: &Table) -> Result<&Table> {
+    let key = "sync";
+    let value_type = "table";
+
+    let origin_key = "origin";
+    let origin_value_type = "string";
+
+    let path_key = "path";
+    let path_value_type = "string";
+
+    let targets_key = "targets";
+    let targets_value_type = "array of strings";
+
+    let Some(value) = config.get(key) else {
+        missing!(key);
+    };
+
+    let Some(table) = value.as_table() else {
+        invalid!(key, value_type);
+    };
+
+    let Some(origin_value) = table.get(origin_key) else {
+        missing!(format!("{key}.{origin_key}"));
+    };
+
+    if !origin_value.is_str() {
+        invalid!(format!("{key}.{origin_key}"), origin_value_type);
+    };
+
+    if let Some(path_value) = table.get(path_key) {
+        if !path_value.is_bool() {
+            invalid!(format!("{key}.{path_key}"), path_value_type);
+        };
+    };
+
+    if let Some(targets_value) = table.get(targets_key) {
+        let Some(targets_array) = targets_value.as_array() else {
+            invalid!(format!("{key}.{targets_key}"), targets_value_type);
+        };
+
+        if targets_array.iter().any(|i| !i.is_str()) {
+            invalid!(format!("{key}.{targets_key}"), targets_value_type);
+        };
+    } else {
+        missing!(format!("{key}.{targets_key}"));
+    };
+
+    Ok(table)
+}
+
+pub(crate) fn sync_pull(config: &Table) -> Result<()> {
+    let sync = get_sync(config)?;
+
+    let path = if let Some(p) = sync.get("path") {
+        p.as_str().unwrap()
+    } else {
+        "./"
+    };
+
+    let path = PathBuf::from(path)
+        .canonicalize()
+        .context("couldn't canonicalize sync repository path")?;
+
+    let result = Command::new("git").arg("pull").current_dir(path).output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while pulling changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+pub(crate) fn sync_push(config: &Table) -> Result<()> {
+    let sync = get_sync(config)?;
+
+    let path = if let Some(p) = sync.get("path") {
+        p.as_str().unwrap()
+    } else {
+        "./"
+    };
+
+    let targets: Vec<_> = sync["targets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t.as_str().unwrap())
+        .collect();
+
+    let path = PathBuf::from(path)
+        .canonicalize()
+        .context("couldn't canonicalize sync repository path")?;
+
+    let result = Command::new("git")
+        .arg("add")
+        .args(targets)
+        .current_dir(&path)
+        .output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while staging changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    let timestamp = chrono::Utc::now();
+    let commit_msg = format!("droplet: {}", timestamp.format("%H:%M:%S UTC | %Y-%m-%d"));
+
+    let result = Command::new("git")
+        .args(["commit", "--allow-empty", "-m", &commit_msg])
+        .current_dir(&path)
+        .output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while committing changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    let result = Command::new("git")
+        .arg("push")
+        .current_dir(&path)
+        .output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while pushing changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    Ok(())
 }
