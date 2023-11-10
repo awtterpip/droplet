@@ -80,6 +80,9 @@ pub(crate) fn get_service(config: &Table) -> Result<&Table> {
     let args_key = "args";
     let args_value_type = "array of strings";
 
+    let log_key = "log";
+    let log_value_type = "boolean";
+
     let Some(value) = config.get(key) else {
         missing!(key);
     };
@@ -100,16 +103,20 @@ pub(crate) fn get_service(config: &Table) -> Result<&Table> {
         bail!("service file '{exec_str}' does not exist");
     }
 
-    let Some(args_value) = table.get(args_key) else {
-        missing!(format!("{key}.{args_key}"));
+    if let Some(args_value) = table.get(args_key) {
+        let Some(args_array) = args_value.as_array() else {
+            invalid!(format!("{key}.{args_key}"), args_value_type);
+        };
+
+        if args_array.iter().any(|i| i.as_str().is_none()) {
+            invalid!(format!("{key}.{args_key}"), args_value_type);
+        };
     };
 
-    let Some(args_array) = args_value.as_array() else {
-        invalid!(format!("{key}.{args_key}"), args_value_type);
-    };
-
-    if args_array.iter().any(|i| i.as_str().is_none()) {
-        invalid!(format!("{key}.{args_key}"), args_value_type);
+    if let Some(log_value) = table.get(log_key) {
+        if log_value.as_bool().is_none() {
+            invalid!(format!("{key}.{log_key}"), log_value_type);
+        };
     };
 
     Ok(table)
@@ -118,27 +125,37 @@ pub(crate) fn get_service(config: &Table) -> Result<&Table> {
 pub(crate) fn start_service(config: &Table) -> Result<Child> {
     let service = get_service(config)?;
 
-    let log_path = PathBuf::from("service.log");
-    if log_path.exists() {
-        remove_file(log_path)?;
+    let exec = service["exec"].as_str().unwrap();
+    let args: Vec<&str> = if let Some(v) = service.get("args") {
+        v.as_array()
+            .unwrap()
+            .iter()
+            .map(|s| s.as_str().unwrap())
+            .collect()
+    } else {
+        vec![]
+    };
+
+    let mut cmd = Command::new(exec);
+
+    if service.get("log").map(|v| v.as_bool()) == Some(Some(false)) {
+        cmd.stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit());
+    } else {
+        let log_path = PathBuf::from("service.log");
+        if log_path.exists() {
+            remove_file(log_path)?;
+        }
+
+        let stdout_log = File::create("service.log").unwrap();
+        let stderr_log = stdout_log.try_clone()?;
+
+        cmd.stdout(Stdio::from(stdout_log))
+            .stderr(Stdio::from(stderr_log));
     }
 
-    let stdout_log = File::create("service.log").unwrap();
-    let stderr_log = stdout_log.try_clone()?;
-
-    let exec = service["exec"].as_str().unwrap();
-    let args: Vec<&str> = service["args"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .map(|s| s.as_str().unwrap())
-        .collect();
-
-    let child = Command::new(exec)
-        .args(args)
-        .stdout(Stdio::from(stdout_log))
-        .stderr(Stdio::from(stderr_log))
-        .spawn()?;
+    let child = cmd.args(args).spawn()?;
 
     Ok(child)
 }
