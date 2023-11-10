@@ -41,9 +41,15 @@ fn main() -> Result<()> {
             }
         }
         Err(e) => {
-            eprintln!("\nwarning: failed to update DNS record");
-            eprintln!("your service will only be accessible directly via your public IP address");
-            eprintln!("source of error:\n{e}");
+            eprintln!();
+            eprintln!("warning:");
+            eprintln!("    failed to update DNS record");
+            eprintln!("    your service will only be accessible via your public IP address");
+            eprintln!("    source of error:");
+            for line in e.to_string().lines() {
+                eprintln!("        {line}");
+            }
+            eprintln!()
         }
     }
 
