@@ -32,9 +32,6 @@ fn main() -> Result<()> {
     ))?;
     println!("configuration loaded");
 
-    let service = util::start_service(&config).context("failed starting service")?;
-    println!("service started");
-
     let response = util::update_dns(&config);
 
     match response {
@@ -50,7 +47,8 @@ fn main() -> Result<()> {
         }
     }
 
-    println!("\nall tasks complete, waiting for service to exit...");
+    let service = util::start_service(&config).context("failed starting service")?;
+    println!("service started");
 
     let output = service
         .wait_with_output()
