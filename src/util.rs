@@ -236,6 +236,58 @@ pub(crate) fn sync_pull(config: &Table) -> Result<()> {
     Ok(())
 }
 
+fn git_add(targets: &[&str], path: &Path) -> Result<()> {
+    let result = Command::new("git")
+        .arg("add")
+        .args(targets)
+        .current_dir(path)
+        .output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while staging changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+fn git_commit(path: &Path) -> Result<()> {
+    let timestamp = chrono::Utc::now();
+    let commit_msg = format!("droplet: {}", timestamp.format("%H:%M:%S UTC | %Y-%m-%d"));
+
+    let result = Command::new("git")
+        .args(["commit", "--allow-empty", "-m", &commit_msg])
+        .current_dir(path)
+        .output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while committing changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    Ok(())
+}
+
+fn git_push(path: &Path) -> Result<()> {
+    let result = Command::new("git").arg("push").current_dir(path).output()?;
+
+    if !result.status.success() {
+        bail!(
+            "while pushing changes:\nstdout: {}\nstderr: {}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        )
+    }
+
+    Ok(())
+}
+
 pub(crate) fn sync_push(config: &Table) -> Result<()> {
     let sync = get_sync(config)?;
 
@@ -256,48 +308,14 @@ pub(crate) fn sync_push(config: &Table) -> Result<()> {
         .canonicalize()
         .context("couldn't canonicalize sync repository path")?;
 
-    let result = Command::new("git")
-        .arg("add")
-        .args(targets)
-        .current_dir(&path)
-        .output()?;
+    println!("sync: staging changes...");
+    git_add(&targets, &path)?;
 
-    if !result.status.success() {
-        bail!(
-            "while staging changes:\nstdout: {}\nstderr: {}",
-            String::from_utf8_lossy(&result.stdout),
-            String::from_utf8_lossy(&result.stderr)
-        )
-    }
+    println!("sync: committing changes...");
+    git_commit(&path)?;
 
-    let timestamp = chrono::Utc::now();
-    let commit_msg = format!("droplet: {}", timestamp.format("%H:%M:%S UTC | %Y-%m-%d"));
-
-    let result = Command::new("git")
-        .args(["commit", "--allow-empty", "-m", &commit_msg])
-        .current_dir(&path)
-        .output()?;
-
-    if !result.status.success() {
-        bail!(
-            "while committing changes:\nstdout: {}\nstderr: {}",
-            String::from_utf8_lossy(&result.stdout),
-            String::from_utf8_lossy(&result.stderr)
-        )
-    }
-
-    let result = Command::new("git")
-        .arg("push")
-        .current_dir(&path)
-        .output()?;
-
-    if !result.status.success() {
-        bail!(
-            "while pushing changes:\nstdout: {}\nstderr: {}",
-            String::from_utf8_lossy(&result.stdout),
-            String::from_utf8_lossy(&result.stderr)
-        )
-    }
+    println!("sync: pushing changes...");
+    git_push(&path)?;
 
     Ok(())
 }
