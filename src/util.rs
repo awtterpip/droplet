@@ -190,7 +190,7 @@ pub(crate) fn get_sync(config: &Table) -> Result<&Table> {
     };
 
     if let Some(path_value) = table.get(path_key) {
-        if !path_value.is_bool() {
+        if !path_value.is_str() {
             invalid!(format!("{key}.{path_key}"), path_value_type);
         };
     };
