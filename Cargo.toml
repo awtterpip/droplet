@@ -1,6 +1,6 @@
 [package]
 name = "droplet"
-version = "0.1.12"
+version = "0.1.14"
 edition = "2021"
 description = "A simple utility to assist small organizations/groups in distributing a service across multiple machines"
 repository = "https://github.com/SaphiraKai/droplet"
