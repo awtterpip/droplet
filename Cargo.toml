@@ -2,6 +2,14 @@
 name = "droplet"
 version = "0.1.12"
 edition = "2021"
+description = "A simple utility to assist small organizations/groups in distributing a service across multiple machines"
+repository = "https://github.com/SaphiraKai/droplet"
+homepage = "https://github.com/SaphiraKai/droplet"
+license = "MIT"
+keywords = ["hosting", "service", "freedns", "sync", "minecraft-server"]
+categories = ["command-line-utilities"]
+
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
