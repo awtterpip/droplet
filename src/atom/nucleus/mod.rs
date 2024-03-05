@@ -1,2 +1,2 @@
-/// TODO: Document [`crate::nucleus::args`].
+/// TODO: Document [`crate::atom::nucleus::args`].
 pub mod args;

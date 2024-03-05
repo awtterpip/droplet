@@ -1,4 +1,4 @@
-/// Collection of exports for the [`crate::valence`] layer.
+/// Collection of exports for the [`crate::atom::valence`] layer.
 pub mod prelude {
     pub use super::config::Config;
     pub use super::settings::Settings;
@@ -14,5 +14,5 @@ pub mod settings;
 /// Runtime configuration for `droplet`, generally derived from `droplet.toml`.
 pub mod config;
 
-/// TODO: Document [`crate::core::error`].
+/// TODO: Document [`crate::atom::core::error`].
 pub mod error;
