@@ -14,5 +14,5 @@ pub mod settings;
 /// Runtime configuration for `droplet`, generally derived from `droplet.toml`.
 pub mod config;
 
-/// TODO: Document [`crate::atom::core::error`].
+/// todo! Document [`crate::atom::core::error`].
 pub mod error;

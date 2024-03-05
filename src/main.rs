@@ -1,4 +1,4 @@
-/// TODO: Document [`crate::atom`].
+/// todo! Document [`crate::atom`].
 pub mod atom;
 
 /// Main entrypoint into the program.
