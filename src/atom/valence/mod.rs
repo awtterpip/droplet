@@ -1,4 +1,4 @@
-use crate::core::prelude::*;
+use crate::atom::core::prelude::*;
 
 /// "Real" entrypoint into the program.
 ///

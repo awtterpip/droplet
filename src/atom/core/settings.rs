@@ -1,4 +1,4 @@
-use crate::nucleus;
+use crate::atom::nucleus;
 
 /// Runtime settings for `droplet`.
 pub struct Settings {
