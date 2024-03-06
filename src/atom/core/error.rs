@@ -1,30 +1,11 @@
-use std::{error::Error as ErrorTrait, fmt};
+use thiserror::Error;
 
-#[derive(Debug)]
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug, Error)]
 pub enum Error {
-    SyncError(String),
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let msg = match self {
-            Error::SyncError(s) => s,
-        };
-
-        write!(f, "{}", msg)
-    }
-}
-
-impl ErrorTrait for Error {
-    fn source(&self) -> Option<&(dyn ErrorTrait + 'static)> {
-        None
-    }
-
-    fn description(&self) -> &str {
-        "description() is deprecated; use Display"
-    }
-
-    fn cause(&self) -> Option<&dyn ErrorTrait> {
-        self.source()
-    }
+    #[error("Encountered error while trying to parse config: {0}")]
+    InvalidConfig(#[from] toml::de::Error),
+    #[error("Encountered an IO error: {0}")]
+    IoError(#[from] std::io::Error),
 }

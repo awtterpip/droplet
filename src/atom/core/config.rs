@@ -1,7 +1,11 @@
-use super::error::Error;
-use super::settings::Settings;
+use std::path::Path;
+
+use super::error::Result;
+
+use serde::Deserialize;
 
 /// The main runtime configuration for `droplet`.
+#[derive(Deserialize)]
 pub struct Config {
     /// The inner [`Service`] configuration.
     service: Service,
@@ -14,21 +18,17 @@ pub struct Config {
 }
 
 impl Config {
-    /// Create a [`Config`].
-    ///
-    /// This function returns a temporary default, pending implementation.
-    pub fn get(settings: &Settings) -> Config {
-        // todo!()
-        Config::test_value()
+    /// Attempts to parse a [Config] from the file at the path
+    pub fn try_get(path: impl AsRef<Path>) -> Result<Self> {
+        let string = std::fs::read_to_string(path)?;
+        Self::from_str(&string)
     }
 
-    /// Create a dummy [`Config`] for testing purposes.
-    fn test_value() -> Config {
-        let service = Service::test_value();
-        let dns = Some(Dns::test_value());
-        let sync = Some(Sync::test_value());
-
-        Config { service, dns, sync }
+    /// Attempts to parse a [Config] from a string.
+    ///
+    /// Expects toml format
+    pub fn from_str(string: &str) -> Result<Self> {
+        Ok(toml::from_str(string)?)
     }
 }
 
@@ -48,14 +48,17 @@ impl Config {
 }
 
 /// The service configuration for `droplet`.
+#[derive(Deserialize)]
 pub struct Service {
     /// Path to the executable binary/script.
     exec: String,
 
     /// Arguments for the executable.
+    #[serde(default)]
     args: Vec<String>,
 
     /// Whether to print output to the terminal (`false`) or log to a `service.log` file (`true`).
+    #[serde(default)]
     log: bool,
 }
 
@@ -63,18 +66,9 @@ impl Service {
     /// Run the service.
     ///
     /// This function does nothing, pending implementation.
-    pub fn run(&self) -> Result<(), Error> {
+    pub fn run(&self) -> Result<()> {
         // todo!()
         Ok(())
-    }
-
-    /// Create a default [`Service`] for testing purposes.
-    fn test_value() -> Service {
-        let exec = "/bin/sh".to_string();
-        let args = vec!["-c".to_string(), "echo test".to_string()];
-        let log = true;
-
-        Service { exec, args, log }
     }
 }
 
@@ -94,6 +88,7 @@ impl Service {
 }
 
 /// The DNS configuration for `droplet`.
+#[derive(Deserialize)]
 pub struct Dns {
     /// [FreeDNS](https://freedns.afraid.org) Dynamic DNS code, used to update your domain's IP address.
     code: String,
@@ -106,13 +101,6 @@ impl Dns {
     pub fn update_ip(&self) {
         // todo!()
     }
-
-    /// Create a default [`Dns`] for testing purposes.
-    fn test_value() -> Dns {
-        let code = "eWBRKL3JuN4W6KDj2vLkt94o".to_string();
-
-        Dns { code }
-    }
 }
 
 /// Getter functions for [`Dns`].
@@ -122,7 +110,16 @@ impl Dns {
     }
 }
 
+fn path_default() -> String {
+    ".".into()
+}
+
+fn targets_default() -> Vec<String> {
+    vec![".".into()]
+}
+
 /// The DNS configuration for `droplet`.
+#[derive(Deserialize)]
 pub struct Sync {
     /// URL to the git repository `droplet` will use.
     ///
@@ -130,9 +127,11 @@ pub struct Sync {
     origin: String,
 
     /// Relative path (on disk) to the git repository.
+    #[serde(default = "path_default")]
     path: String,
 
     /// List of relative paths to files that should be kept in sync. Specifying a directory will synchronize all files within.
+    #[serde(default = "targets_default")]
     targets: Vec<String>,
 }
 
@@ -140,7 +139,7 @@ impl Sync {
     /// `git pull` changes from remote repository.
     ///
     /// This function does nothing, pending implementation.
-    pub fn pull_changes(&self) -> Result<(), Error> {
+    pub fn pull_changes(&self) -> Result<()> {
         // todo!()
         Ok(())
     }
@@ -148,7 +147,7 @@ impl Sync {
     /// `git add` files to be synchronized.
     ///
     /// This function does nothing, pending implementation.
-    pub fn add_changes(&self) -> Result<(), Error> {
+    pub fn add_changes(&self) -> Result<()> {
         // todo!()
         Ok(())
     }
@@ -156,22 +155,9 @@ impl Sync {
     /// `git push` changes to remote repository.
     ///
     /// This function does nothing, pending implementation.
-    pub fn push_changes(&self) -> Result<(), Error> {
+    pub fn push_changes(&self) -> Result<()> {
         // todo!()
         Ok(())
-    }
-
-    /// Create a default [`Sync`] for testing purposes.
-    fn test_value() -> Sync {
-        let origin = "https://github.com/SaphiraKai/droplet-sync-test".to_string();
-        let path = "../droplet-sync-test/".to_string();
-        let targets = vec!["update/".to_string()];
-
-        Sync {
-            origin,
-            path,
-            targets,
-        }
     }
 }
 

@@ -10,9 +10,11 @@ keywords = ["hosting", "service", "freedns", "sync", "minecraft-server"]
 categories = ["command-line-utilities"]
 
 
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 color-eyre = "0.6.2"
+serde = { version = "1.0.197", features = ["derive"] }
+thiserror = "1.0.57"
+toml = { version = "0.8.10", features = ["parse"] }
