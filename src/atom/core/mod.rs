@@ -5,7 +5,7 @@ pub mod prelude {
 
     pub use super::config;
 
-    pub use anyhow::Result;
+    pub use color_eyre::Result;
 }
 
 /// Runtime settings for `droplet`, generally set at the commandline.
