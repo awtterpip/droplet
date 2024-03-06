@@ -18,13 +18,13 @@ pub struct Config {
 }
 
 impl Config {
-    /// Attempts to parse a [Config] from the file at the path
+    /// Attempts to parse a [`Config`] from the file at the path
     pub fn try_get(path: impl AsRef<Path>) -> Result<Self> {
         let string = std::fs::read_to_string(path)?;
         Self::from_str(&string)
     }
 
-    /// Attempts to parse a [Config] from a string.
+    /// Attempts to parse a [`Config`] from a string.
     ///
     /// Expects toml format
     pub fn from_str(string: &str) -> Result<Self> {

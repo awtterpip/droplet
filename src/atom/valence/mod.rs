@@ -5,7 +5,7 @@ use crate::atom::core::prelude::*;
 /// This function is called by [`crate::main`].
 pub(crate) fn main() -> Result<()> {
     let settings = Settings::get();
-    let config = Config::try_get(settings.config_path()).expect("Failed to parse config file");
+    let config = Config::try_get(settings.config_path())?;
 
     if settings.update_dns() {
         if let Some(dns) = config.dns() {
